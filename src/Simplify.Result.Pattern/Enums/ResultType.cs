@@ -1,4 +1,4 @@
-namespace Result.Pattern.Sample.Enums;
+namespace Simplify.Result.Pattern.Enums;
 
 public enum ResultType
 {

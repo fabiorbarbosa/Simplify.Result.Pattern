@@ -1,6 +1,0 @@
-@Result.Pattern.Sample_HostAddress = http://localhost:5036
-
-GET {{Result.Pattern.Sample_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

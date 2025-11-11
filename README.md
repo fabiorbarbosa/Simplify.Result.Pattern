@@ -1,207 +1,137 @@
-# Result.Pattern.Sample
+# Simplify.Result.Pattern
 
-This project demonstrates a robust implementation of the Result pattern in ASP.NET Core APIs. It provides a standardized way to handle HTTP responses, encapsulate success and error states, and organize code for better clarity and maintainability.
+<p align="center">
+  <img src="assets/logo.svg" alt="Simplify Result Pattern logo" width="200">
+</p>
 
-## ✨ Features
+Reusable Result pattern primitives and ASP.NET Core extensions that keep your API responses predictable, strongly typed, and ready to ship to NuGet.
 
-### **Core Result Pattern**
-- **Generic Result Class**: `Result<T>` that can represent both success and error states
-- **State Validation**: Automatic validation to ensure consistency (success results can't have errors, error results can't have values)
-- **Type Safety**: Strongly typed responses with comprehensive error handling
+## Why use it?
 
-### **HTTP Response Standardization**
-- **Automatic Conversion**: Seamless conversion from `Result<T>` to HTTP responses
-- **Status Code Mapping**: Proper HTTP status codes for different result types
-- **Consistent Error Format**: Standardized error response structure
+- **Single contract** for successes, validation errors, conflicts, and infrastructure failures.
+- **Zero duplicate plumbing** – convert any `Result<T>` to an `IActionResult` with one method call.
+- **Side-effect hooks** via `OnSuccess` and `OnFailure` so you can log, audit, or publish domain events.
+- **Optional data envelope** – pass `wrapInData: true` to `Success` and return `{ "data": ... }` without rewriting controllers.
+- **NuGet packaging ready** – every build emits `.nupkg`/`.snupkg`, so publishing is just a push away.
 
-### **Result Types Supported**
-- ✅ **Success** (200 OK) - Successful operations with data
-- ✅ **Created** (201 Created) - Resource creation with location header
-- ✅ **NoContent** (204 No Content) - Successful operations without data
-- ✅ **NotFound** (404 Not Found) - Resource not found
-- ✅ **Validation** (422 Unprocessable Entity) - Validation errors
-- ✅ **Conflict** (409 Conflict) - Resource conflicts
-- ✅ **Unauthorized** (401 Unauthorized) - Authentication required
-- ✅ **Failure** (500 Internal Server Error) - General failures
+## Installation
 
-### **Extension Methods**
-- **`ToObjectResult()`**: Converts `Result<T>` to appropriate HTTP responses
-- **`OnSuccess()`**: Execute actions on successful results with error handling
-- **`OnFailure()`**: Execute actions on failed results with error handling
-
-## 🏗️ Project Structure
-
-```
-Result.Pattern.Sample/
-├── Controllers/
-│   └── WeatherForecastController.cs    # Example API endpoints
-├── Enums/
-│   └── ResultType.cs                   # Result type definitions
-├── Extensions/
-│   └── ResultExtension.cs              # HTTP conversion and utility methods
-├── Results/
-│   └── Result.cs                       # Core Result pattern implementation
-└── WeatherForecast.cs                  # Example data model
+```bash
+dotnet add package Simplify.Result.Pattern
 ```
 
-## 🚀 Usage Examples
+Or pack it locally from this repository:
 
-### **Basic Success Response**
+```bash
+dotnet pack src/Simplify.Result.Pattern/Simplify.Result.Pattern.csproj -c Release
+```
+
+## Quick start
+
 ```csharp
-public IActionResult Get()
-{
-    var data = GetWeatherData();
-    var result = Result<IEnumerable<WeatherForecast>>.Success(data);
-    return result.ToObjectResult();
-}
-```
+using Microsoft.AspNetCore.Mvc;
+using Simplify.Result.Pattern.Extensions;
+using Simplify.Result.Pattern.Results;
 
-### **Error Handling**
-```csharp
-public IActionResult GetByName(string name)
+[ApiController]
+[Route("[controller]")]
+public class WeatherForecastController : ControllerBase
 {
-    if (string.IsNullOrEmpty(name))
-        return Result<IEnumerable<WeatherForecast>>
-            .ValidationError(["Name is required"])
+    [HttpGet("{name}")]
+    public IActionResult GetByName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return Result<IEnumerable<string>>
+                .ValidationError(["Name is required."])
+                .ToObjectResult();
+        }
+
+        var results = GetForecasts(name);
+
+        if (!results.Any())
+        {
+            return Result<IEnumerable<string>>
+                .NotFound($"No forecast for '{name}'.")
+                .ToObjectResult();
+        }
+
+        return Result<IEnumerable<string>>
+            .Success(results, wrapInData: true)
+            .OnSuccess(values => _logger.LogInformation("Returned {Count} entries", values.Count()))
             .ToObjectResult();
-
-    var data = GetWeatherByName(name);
-    if (!data.Any())
-        return Result<IEnumerable<WeatherForecast>>
-            .NotFound($"No weather found for '{name}'")
-            .ToObjectResult();
-
-    return Result<IEnumerable<WeatherForecast>>.Success(data).ToObjectResult();
+    }
 }
 ```
 
-### **Resource Creation**
+## Supported result types
+
+| Type        | Status code | Helper                                                  |
+|-------------|-------------|---------------------------------------------------------|
+| Success     | 200 OK      | `Result<T>.Success(value, statusCode: optional)`        |
+| Created     | 201 Created | `Result<T>.Created(value, actionName, routeValues)`     |
+| NoContent   | 204         | `Result<T>.NoContent()`                                 |
+| NotFound    | 404         | `Result<T>.NotFound(message)`                           |
+| Validation  | 422         | `Result<T>.ValidationError(errors)`                     |
+| Conflict    | 409         | `Result<T>.Conflict(message)`                           |
+| Unauthorized| 401         | `Result<T>.Unauthorized(message)`                       |
+| Failure     | 500         | `Result<T>.Failure(ResultType.Failure, errors/messages)`|
+
+`ResultExtension.ToObjectResult()` maps each type to the correct `IActionResult`, including payloads and error envelopes.
+
+Need JSON shaped as `{ "data": ... }`? Set the optional `wrapInData` flag when building the success result:
+
 ```csharp
-public IActionResult Create(WeatherForecast forecast)
-{
-    var createdForecast = CreateWeatherForecast(forecast);
-    return Result<WeatherForecast>
-        .Created(createdForecast, nameof(Get), new { id = createdForecast.Id })
-        .ToObjectResult();
-}
+var response = Result<MyDto>.Success(dto, wrapInData: true).ToObjectResult();
+// => 200 OK with { "data": { ... } }
 ```
 
-### **Using Extension Methods**
-```csharp
-public IActionResult GetWithLogging()
-{
-    var result = GetWeatherData()
-        .OnSuccess(data => _logger.LogInformation($"Retrieved {data.Count()} weather records"))
-        .OnFailure(errors => _logger.LogError($"Failed to get weather data: {string.Join(", ", errors)}"));
-    
-    return result.ToObjectResult();
-}
+## Project layout
+
+```
+src/
+├── Simplify.Result.Pattern/        # NuGet-packable library
+└── Simplify.Result.Pattern.Tests/  # xUnit tests for the Result pipeline
 ```
 
-## 📋 API Endpoints
+Key files:
 
-### **GET /weatherforecast**
-Returns a list of weather forecasts.
+- `src/Simplify.Result.Pattern/Results/Result.cs` – core generic Result implementation with factory helpers.
+- `src/Simplify.Result.Pattern/Enums/ResultType.cs` – centralized list of supported states.
+- `src/Simplify.Result.Pattern/Extensions/ResultExtension.cs` – MVC integration + hook helpers.
+- `src/Simplify.Result.Pattern.Tests/` – xUnit suite covering the Result pipeline end-to-end.
 
-**Response (Success):**
-```json
-[
-  {
-    "date": "2024-01-15",
-    "temperatureC": 25,
-    "temperatureF": 77,
-    "summary": "Warm"
-  }
-]
+## Build, test, and pack
+
+```bash
+dotnet restore Result.Pattern.sln
+dotnet test Result.Pattern.sln           # runs unit tests and packs the library (GeneratePackageOnBuild=true)
+dotnet pack src/Simplify.Result.Pattern/Simplify.Result.Pattern.csproj -c Release
 ```
 
-### **GET /weatherforecast/{name}**
-Returns weather forecasts filtered by name.
+To publish the generated package to nuget.org:
 
-**Response (Success):**
-```json
-[
-  {
-    "date": "2024-01-15",
-    "temperatureC": 25,
-    "temperatureF": 77,
-    "summary": "Warm"
-  }
-]
+```bash
+dotnet nuget push src/Simplify.Result.Pattern/bin/Release/Simplify.Result.Pattern.<version>.nupkg \
+  --api-key <NUGET_API_KEY> \
+  --source https://api.nuget.org/v3/index.json
 ```
 
-**Response (NotFound):**
-```json
-{
-  "errors": ["No weather found for 'InvalidName'"]
-}
-```
+## Automated publishing
 
-## 🛠️ Technologies Used
+The repository ships with `.github/workflows/publish.yml`, which:
 
-- **.NET 9.0**
-- **ASP.NET Core Web API**
-- **Swagger/OpenAPI** for API documentation
-- **REST Client** for testing (included `.http` file)
+- runs on every `v*` tag push or manual dispatch;
+- restores, tests, and packs the library;
+- embeds the project logo (`logo.png`) inside the NuGet package via `<PackageIcon>`;
+- pushes the `.nupkg` to nuget.org when the `NUGET_API_KEY` secret is configured.
 
-## 🚀 How to Run
+Tagging the repository (for example `v1.2.3`) is enough to trigger the pipeline and publish a versioned package with the same icon used throughout this README.
 
-1. **Prerequisites**: Ensure you have .NET 9.0 SDK installed
-2. **Clone the repository**:
-   ```bash
-   git clone https://github.com/your-username/Result.Pattern.Sample.git
-   cd Result.Pattern.Sample
-   ```
-3. **Run the application**:
-   ```bash
-   dotnet run
-   ```
-4. **Access the API**:
-   - Swagger UI: `http://localhost:5100/swagger`
-   - API Endpoints: `http://localhost:5100/weatherforecast`
+## Contributing
 
-## 🧪 Testing
+1. Keep namespaces under `Simplify.Result.Pattern.*`.
+2. Add new result types by updating `ResultType`, creating helper factories in `Result<T>`, and mapping them inside `ResultExtension`.
+3. Cover behavioral changes with tests in `src/Simplify.Result.Pattern.Tests`.
 
-The project includes a `.http` file for testing with the REST Client extension in VS Code:
-
-```http
-### Get all weather forecasts
-GET http://localhost:5100/weatherforecast
-
-### Get weather by name
-GET http://localhost:5100/weatherforecast/Warm
-```
-
-## 📚 Key Benefits
-
-### **For Developers**
-- **Consistency**: Standardized response format across all endpoints
-- **Type Safety**: Compile-time checking of result types
-- **Error Handling**: Centralized error management with proper HTTP status codes
-- **Maintainability**: Clean separation of concerns and reusable components
-
-### **For API Consumers**
-- **Predictable Responses**: Consistent response structure
-- **Clear Error Messages**: Descriptive error information
-- **Proper HTTP Status Codes**: Accurate status codes for different scenarios
-
-## 🔧 Customization
-
-### **Adding New Result Types**
-1. Add new enum value in `ResultType.cs`
-2. Update the `ToObjectResult()` extension method
-3. Add convenience methods in `Result.cs` if needed
-
-### **Custom Error Handling**
-```csharp
-public static Result<T> CustomError<T>(string message, int statusCode)
-    => new(false, ResultType.Failure, default, errors: [message], statusCode: (HttpStatusCode)statusCode);
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit issues or pull requests.
-
-## 📄 License
-
-See [LICENSE](LICENSE) for details.
+MIT licensed. See `LICENSE` for details.

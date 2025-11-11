@@ -1,0 +1,19 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Simplify Result Pattern logo">
+  <defs>
+    <linearGradient id="sunset" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6C63FF"/>
+      <stop offset="100%" stop-color="#00C6FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="64" fill="#0B0C1D"/>
+  <g transform="translate(96 96)">
+    <rect x="0" y="80" width="128" height="128" rx="24" fill="none" stroke="url(#sunset)" stroke-width="24"/>
+    <rect x="192" y="0" width="128" height="128" rx="24" fill="none" stroke="#00F5A0" stroke-width="24"/>
+    <rect x="192" y="192" width="128" height="128" rx="24" fill="none" stroke="#FF5F6D" stroke-width="24"/>
+    <path d="M64 144 H352" stroke="url(#sunset)" stroke-width="20" stroke-linecap="round"/>
+    <path d="M64 208 H352" stroke="#FFBA08" stroke-width="20" stroke-linecap="round"/>
+    <circle cx="64" cy="144" r="16" fill="#00F5A0"/>
+    <circle cx="352" cy="208" r="16" fill="#FF5F6D"/>
+    <text x="160" y="300" font-size="64" font-family="Segoe UI, Arial, sans-serif" font-weight="700" fill="#FFFFFF" text-anchor="middle">SRP</text>
+  </g>
+</svg>
