@@ -1,7 +1,7 @@
 # Simplify.Result.Pattern
 
 <p align="center">
-  <img src="assets/logo.svg" alt="Simplify Result Pattern logo" width="200">
+  <img src="assets/logo.svg" alt="Simplify Result Pattern" width="200">
 </p>
 
 Reusable Result pattern primitives and ASP.NET Core extensions that keep your API responses predictable, strongly typed, and ready to ship to NuGet.
