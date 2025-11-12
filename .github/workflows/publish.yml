@@ -3,7 +3,7 @@ name: Publish Simplify.Result.Pattern
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 env:
@@ -21,7 +21,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: "9.0.x"
 
       - name: Determine package version
         id: version
@@ -54,12 +54,12 @@ jobs:
           name: simplify-result-pattern-package
           path: ${{ env.ARTIFACTS_DIR }}/*.nupkg
 
-      - name: Publish to NuGet
-        if: secrets.NUGET_API_KEY != ''
+      - name: Push to NuGet
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
-          dotnet nuget push "${{ env.ARTIFACTS_DIR }}/Simplify.Result.Pattern.${{ steps.version.outputs.version }}.nupkg" \
+          dotnet nuget push artifacts/*.nupkg \
             --api-key "$NUGET_API_KEY" \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
