@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Simplify.Result.Pattern\Simplify.Result.Pattern.csproj" />
+    <ProjectReference Include="..\..\src\Simplify.Result.Pattern\Simplify.Result.Pattern.csproj" />
   </ItemGroup>
 
 </Project>

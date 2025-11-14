@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Simplify.Result.Pattern", "src\Simplify.Result.Pattern\Simplify.Result.Pattern.csproj", "{3F6145E3-5161-48E8-81E3-41C8DFA38A5C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Simplify.Result.Pattern.Tests", "src\Simplify.Result.Pattern.Tests\Simplify.Result.Pattern.Tests.csproj", "{78188110-ACE0-4BE8-B28D-A0D1B4DC8A6B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Simplify.Result.Pattern.Tests", "tests\Simplify.Result.Pattern.Tests\Simplify.Result.Pattern.Tests.csproj", "{78188110-ACE0-4BE8-B28D-A0D1B4DC8A6B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
